@@ -38,4 +38,4 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Scrape a Category')
     parser.add_argument('--url', type=str, metavar='', help='URL of a category')
     args = parser.parse_args()
-    print(scrape_cat(args.cat))
+    print(scrape_cat(args.url))
