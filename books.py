@@ -1,4 +1,5 @@
 import requests
+import argparse
 from bs4 import BeautifulSoup
 from word2number import w2n
 
@@ -40,3 +41,11 @@ def scrape_book(url):
         }
     else:
         print("Error", r.status_code)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Scrape a Book')
+    parser.add_argument('--url', type=str, metavar='',
+                        help='URL of a book from http://books.toscrape.com/')
+    args = parser.parse_args()
+    print(scrape_book(args.url))
