@@ -1,22 +1,44 @@
+import os
 import csv
-from books import *
-from category import *
-from categories_list import *
+import requests
+import books
+import category
+import categories_list
 
 
 def main():
-    dico = {}
-    categories = scrape_cat_list()
+    """
+    This function makes a request from the web site http://books.toscrape.com/,
+    and returns a dict of each book from each category belonging to this web site.
+    It doesn't need any parameter.
+    """
+    books_details = {}
+    categories = categories_list.scrape_cat_list()
+    directory = "Books_to_Scrape"
+    try:
+        os.mkdir(os.path.join(os.getcwd(), directory))
+        os.chdir(os.path.join(os.getcwd(), directory))
+    except FileExistsError:
+        print(f"Error : File {directory} already exists !"
+              "\nPlease rename/delete it if you want this utility runs correctly.")
+        exit()
     for i in range(len(categories)):
-        name = scrape_book(scrape_cat(categories[i])[0])['category']
-        category = scrape_cat(scrape_cat_list()[i])
+        cat = category.scrape_cat(categories[i])
+        name = categories[i].split('/')[6].translate({ord(c): None for c in '_0123456789'}).capitalize()
         print("Collecting data from :", name)
-        dico[name] = []
-        for url in category:
-            book = scrape_book(url)
-            dico[name].append(book)
-            filename = "%s.csv" % name
-            with open(filename, "w", newline='', encoding='utf-8') as csvfile:
+        books_details[name] = []
+        try:
+            os.mkdir(os.path.join(os.getcwd(), name))
+            os.chdir(os.path.join(os.getcwd(), name))
+        except FileExistsError:
+            print(f"Error : File {name} already exists ! "
+                  "\nPlease rename/delete it if you want this utility runs correctly.")
+            exit()
+        for url in cat:
+            book = books.scrape_book(url)
+            books_details[name].append(book)
+            filename = f'{name}.csv'
+            with open(filename, "w", newline='', encoding='utf-8') as f:
                 fieldnames = [
                     'title',
                     'upc',
@@ -28,23 +50,34 @@ def main():
                     'category',
                     'image_url'
                 ]
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='|')
                 writer.writeheader()
-                for ind in dico[name]:
-                    writer.writerow({
-                        'title': ind['title'],
-                        'upc': ind["upc"],
-                        'price_excluding_tax': ind['price_excluding_tax'],
-                        'price_including_tax': ind['price_including_tax'],
-                        'number_available': ind['number_available'],
-                        'product_description': ind['product_description'],
-                        'review_rating': ind['review_rating'],
-                        'category': ind['category'],
-                        'image_url': ind['image_url']
-                    })
-
+                for value in books_details[name]:
+                    writer.writerow(value)
+        img_dir = "Images"
+        try:
+            os.mkdir(os.path.join(os.getcwd(), img_dir))
+            os.chdir(os.path.join(os.getcwd(), img_dir))
+        except FileExistsError:
+            print(f"Error : File {img_dir} already exists ! "
+                  "\nPlease rename/delete it if you want this utility runs correctly.")
+            exit()
+        for image_url in books_details[name]:
+            r = requests.get(image_url['image_url'])
+            image_name = f'{image_url["title"]}.jpg'.translate({ord(':'): None,
+                                                                ord('/'): None,
+                                                                ord('*'): None,
+                                                                ord('"'): None,
+                                                                ord('?'): None,
+                                                                ord('<'): None,
+                                                                ord('>'): None,
+                                                                ord('|'): None})
+            if r.ok:
+                with open(image_name, 'wb') as f:
+                    f.write(r.content)
         print("Data collected from :", name)
-        dico = {}
+        books_details = {}
+        os.chdir("../..")
 
 
 if __name__ == '__main__':

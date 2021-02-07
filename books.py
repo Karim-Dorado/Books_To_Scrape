@@ -19,8 +19,8 @@ def scrape_book(url):
         title = body.h1.text
         tds = body.find_all('td')
         upc = tds[0].text
-        price_excluding_tax = tds[2].text[1:]
-        price_including_tax = tds[3].text[1:]
+        price_excluding_tax = tds[2].text
+        price_including_tax = tds[3].text
         number_available = tds[5].text.removeprefix('In stock (').removesuffix(' available)')
         ps = body.find_all('p')
         product_description = ps[3].text
